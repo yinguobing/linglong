@@ -10,70 +10,50 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
-from models.blazenet import blaze_block, double_blaze_block
+from models.shufflenet_v2 import shuffle_unit_v2
 
 
-def blaze_stem(filters):
-    stem_layers = [
-        keras.layers.Conv2D(filters=filters,
-                            kernel_size=(5, 5),
-                            strides=(2, 2),
-                            padding='same'),
-        keras.layers.BatchNormalization(),
-        keras.layers.Activation('relu')]
+def shuffle_net_v2(input_shape):
+    # Build conv layers.
+    stage2_layers = [shuffle_unit_v2(downsampling=True, filters=116)]
+    stage2_layers.extend([shuffle_unit_v2() for _ in range(3)])
 
-    def forward(inputs):
-        for layer in stem_layers:
-            inputs = layer(inputs)
+    stage3_layers = [shuffle_unit_v2(downsampling=True)]
+    stage3_layers.extend([shuffle_unit_v2() for _ in range(7)])
 
-        return inputs
-
-    return forward
-
-
-def blaze_net(input_shape):
-    # Stacking layers for 16x16 feature maps.
-    blaze_layers_16x16 = [
-        blaze_stem(24),
-        blaze_block(24),
-        blaze_block(24),
-        blaze_block(48, (2, 2)),
-        blaze_block(48),
-        blaze_block(48),
-        double_blaze_block(24, 96, (2, 2)),
-        double_blaze_block(24, 96),
-        double_blaze_block(24, 96)]
-
-    # Stacking layers for 8x8 feature maps.
-    blaze_layers_8x8 = [
-        double_blaze_block(24, 96, (2, 2)),
-        double_blaze_block(24, 96),
-        double_blaze_block(24, 96)]
+    stage4_layers = [shuffle_unit_v2(downsampling=True)]
+    stage4_layers.extend([shuffle_unit_v2() for _ in range(3)])
 
     # Inputs defined here.
-    inputs = keras.Input((input_shape), dtype=tf.float32)
+    inputs = keras.Input(input_shape, dtype=tf.float32)
 
-    # Forward propgation till feature map 16x16 got.
-    x = inputs
-    for layer in blaze_layers_16x16:
+    # Forward propgation and get feature map for stage 2, 3, and 4.
+    x = keras.layers.Conv2D(24, 3, 2, 'same')(inputs)
+    x = keras.layers.MaxPool2D(3, 2, 'same')(x)
+
+    for layer in stage2_layers:
         x = layer(x)
-    x_16 = x
+    x_2 = x
 
-    # Keep moving forward till feature map 8x8 got.
-    for layer in blaze_layers_8x8:
+    for layer in stage3_layers:
         x = layer(x)
-    x_8 = x
+    x_3 = x
 
-    outputs = [x_16, x_8]
+    for layer in stage4_layers:
+        x = layer(x)
+    x_4 = x
+
+    # Output the feature maps.
+    outputs = [x_2, x_3, x_4]
 
     # Finally, build the model.
-    model = keras.Model(inputs=inputs, outputs=outputs, name='blaze_net')
+    model = keras.Model(inputs=inputs, outputs=outputs, name='shuffle_net_v2')
 
     return model
 
 
 def get_backbone():
-    return blaze_net((128, 128, 3))
+    return shuffle_net_v2((224, 224, 3))
 
 
 # Building Feature Pyramid Network as a custom layer
@@ -113,7 +93,7 @@ class FeaturePyramid(keras.layers.Layer):
 
 
 """
-## Building the classification and box regression heads.
+# Building the classification and box regression heads.
 
 The RetinaNet model has separate heads for bounding box regression and
 for predicting class probabilities for the objects. These heads are shared
