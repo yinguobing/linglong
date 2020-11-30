@@ -53,43 +53,46 @@ def shuffle_net_v2(input_shape):
 
 
 def get_backbone():
-    return shuffle_net_v2((224, 224, 3))
+    return shuffle_net_v2((None, None, 3))
 
 
-# Building Feature Pyramid Network as a custom layer
-
-class FeaturePyramid(keras.layers.Layer):
+def feature_pyramid(backbone=None):
     """Builds the Feature Pyramid with the feature maps from the backbone.
 
-    Attributes:
-      num_classes: Number of classes in the dataset.
-      backbone: The backbone to build the feature pyramid from.
-        Currently supports ResNet50 only.
+    Args:
+        backbone: The backbone to build the feature pyramid from.
     """
 
-    def __init__(self, backbone=None, **kwargs):
-        super(FeaturePyramid, self).__init__(name="FeaturePyramid", **kwargs)
-        self.backbone = backbone if backbone else get_backbone()
-        self.conv_c3_1x1 = keras.layers.Conv2D(256, 1, 1, "same")
-        self.conv_c4_1x1 = keras.layers.Conv2D(256, 1, 1, "same")
-        self.conv_c3_3x3 = keras.layers.Conv2D(256, 3, 1, "same")
-        self.conv_c4_3x3 = keras.layers.Conv2D(256, 3, 1, "same")
+    _backbone = backbone if backbone else get_backbone()
 
-        self.upsample_2x = keras.layers.UpSampling2D(2)
+    conv_s2_1x1 = keras.layers.Conv2D(256, 1, 1, "same")
+    conv_s2_3x3 = keras.layers.Conv2D(256, 3, 1, "same")
 
-    def call(self, images, training=False):
-        f_16, f_8 = self.backbone(images)
+    conv_s3_1x1 = keras.layers.Conv2D(256, 1, 1, "same")
+    conv_s3_3x3 = keras.layers.Conv2D(256, 3, 1, "same")
 
-        # Match channels
-        p_16 = self.conv_c3_1x1(f_16)
-        p_8 = self.conv_c4_1x1(f_8)
+    conv_s4_1x1 = keras.layers.Conv2D(256, 1, 1, "same")
+    conv_s4_3x3 = keras.layers.Conv2D(256, 3, 1, "same")
 
-        p_16 = p_16 + self.upsample_2x(p_8)
+    upsample_2x = keras.layers.UpSampling2D(2)
 
-        p_16 = self.conv_c3_3x3(p_16)
-        p_8 = self.conv_c4_3x3(p_8)
+    def forward(inputs):
+        x_2, x_3, x_4 = _backbone(inputs)
 
-        return [p_16, p_8]
+        p_4 = conv_s4_1x1(x_4)
+        p_4 = conv_s4_3x3(p_4)
+
+        p_3 = conv_s3_1x1(x_3)
+        p_3 = conv_s3_3x3(p_3)
+        p_3 = p_3 + upsample_2x(p_4)
+
+        p_2 = conv_s2_1x1(x_2)
+        p_2 = conv_s2_3x3(x_2)
+        p_2 = p_2 + upsample_2x(p_3)
+
+        return [p_2, p_3, p_4]
+
+    return forward
 
 
 """
