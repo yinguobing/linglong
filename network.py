@@ -74,23 +74,33 @@ def feature_pyramid(backbone=None):
     conv_s4_1x1 = keras.layers.Conv2D(256, 1, 1, "same")
     conv_s4_3x3 = keras.layers.Conv2D(256, 3, 1, "same")
 
+    conv_s5_3x3 = keras.layers.Conv2D(256, 3, 2, "same")
+    conv_s6_3x3 = keras.layers.Conv2D(256, 3, 2, "same")
+
     upsample_2x = keras.layers.UpSampling2D(2)
 
     def forward(inputs):
         x_2, x_3, x_4 = _backbone(inputs)
 
-        p_4 = conv_s4_1x1(x_4)
-        p_4 = conv_s4_3x3(p_4)
-
-        p_3 = conv_s3_1x1(x_3)
-        p_3 = conv_s3_3x3(p_3)
-        p_3 = p_3 + upsample_2x(p_4)
-
+        # Match channels.
         p_2 = conv_s2_1x1(x_2)
-        p_2 = conv_s2_3x3(x_2)
+        p_3 = conv_s3_1x1(x_3)
+        p_4 = conv_s4_1x1(x_4)
+
+        # Up sampling.
+        p_3 = p_3 + upsample_2x(p_4)
         p_2 = p_2 + upsample_2x(p_3)
 
-        return [p_2, p_3, p_4]
+        # Merge
+        p_2 = conv_s2_3x3(x_2)
+        p_3 = conv_s3_3x3(p_3)
+        p_4 = conv_s4_3x3(p_4)
+
+        # Additional layers for FPN
+        p_5 = conv_s5_3x3(x_4)
+        p_6 = conv_s6_3x3(tf.nn.relu(p_5))
+
+        return [p_2, p_3, p_4, p_5, p_6]
 
     return forward
 
