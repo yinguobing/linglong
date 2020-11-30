@@ -3,7 +3,8 @@ import unittest
 import numpy as np
 import tensorflow as tf
 
-from network import build_head, feature_pyramid, get_backbone, shuffle_net_v2
+from network import (build_head, build_retinanet, feature_pyramid,
+                     get_backbone, shuffle_net_v2)
 
 
 class TestBoxesFunctions(unittest.TestCase):
@@ -50,6 +51,14 @@ class TestBoxesFunctions(unittest.TestCase):
         self.assertListEqual([1, 14, 14, 9*4], b3.shape.as_list())
         self.assertListEqual([1, 7, 7, 9*2], c4.shape.as_list())
         self.assertListEqual([1, 7, 7, 9*4], b4.shape.as_list())
+
+    def test_build_model(self):
+        b_init = tf.constant_initializer(-np.log((1 - 0.01) / 0.01))
+        x = tf.random.normal((1, 224, 224, 3))
+        model = build_retinanet(2, get_backbone())
+        y = model(x)
+
+        self.assertListEqual([1, (28*28+14*14+7*7)*9, 4+2], y.shape.as_list())
 
 
 if __name__ == "__main__":
