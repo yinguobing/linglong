@@ -153,7 +153,7 @@ class WiderFace(object):
         return sample
 
 
-def create_tf_example(example):
+def create_tf_example(example, min_size=None):
 
     img = example.read_image()
     height, width, _ = img.shape
@@ -171,8 +171,32 @@ def create_tf_example(example):
     boxes_wider = example.boxes
     xmin, ymin, wbox, hbox = np.split(boxes_wider, 4, axis=1)
 
-    ymax = (np.clip(ymin + hbox, a_min=0, a_max=height).flatten() / height).tolist()
-    xmax = (np.clip(xmin + wbox, a_min=0, a_max=width).flatten() / width).tolist()
+    # Filter boxes whose size exceeds the threshold.
+    if min_size:
+        mask = np.all((wbox > min_size, hbox > min_size))
+
+        # Incase all boxes are invalid.
+        if not np.any(mask):
+            print("No valid face box found.")
+            return None
+
+        xmin = xmin[mask]
+        ymin = ymin[mask]
+        wbox = wbox[mask]
+        hbox = hbox[mask]
+
+    # In case the coordinates are flipped.
+    xs = np.concatenate((xmin, xmin+wbox), axis=-1)
+    ys = np.concatenate((ymin, ymin+hbox), axis=-1)
+
+    xmin = np.min(xs, axis=-1)
+    xmax = np.max(xs, axis=-1)
+    ymin = np.min(ys, axis=-1)
+    ymax = np.max(ys, axis=-1)
+
+    # Make sure all boxes are in image boundaries.
+    ymax = (np.clip(ymax, a_min=0, a_max=height).flatten() / height).tolist()
+    xmax = (np.clip(xmax, a_min=0, a_max=width).flatten() / width).tolist()
     ymin = (np.clip(ymin, a_min=0, a_max=height).flatten() / height).tolist()
     xmin = (np.clip(xmin, a_min=0, a_max=width).flatten() / width).tolist()
 
@@ -197,14 +221,15 @@ def create_tf_example(example):
 
 if __name__ == "__main__":
     writer = tf.io.TFRecordWriter(
-        "/home/robin/data/face/wider/tfrecord/wider_val.record")
+        "/home/robin/data/face/wider/tfrecord/wider_train.record")
 
     # Read in your dataset to examples variable
     data_dir = "/home/robin/data/face/wider"
-    wider = WiderFace(data_dir, mode="val")
+    wider = WiderFace(data_dir, mode="train")
 
     for example in tqdm(wider):
-        tf_example = create_tf_example(example)
-        writer.write(tf_example.SerializeToString())
+        tf_example = create_tf_example(example, min_size=64)
+        if tf_example is not None:
+            writer.write(tf_example.SerializeToString())
 
     writer.close()
