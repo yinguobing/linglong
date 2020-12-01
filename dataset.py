@@ -226,6 +226,8 @@ def load_datasets(record_file, batch_size, training=False):
 
 if __name__ == "__main__":
     import cv2
+    check_validation = False
+
     dataset = tf.data.TFRecordDataset(
         "/home/robin/data/face/wider/tfrecord/wider_train.record")
     dataset = dataset.map(parse_record)
@@ -245,21 +247,26 @@ if __name__ == "__main__":
                           (0, 255, 0), 2)
 
             # Check if the sample is valid.
-            valid = True
-            x_min = cx - w/2
-            x_max = cx + w/2
-            y_min = cy - h/2
-            y_max = cy + h/2
+            if check_validation:
+                valid = True
+                x_min = cx - w/2
+                x_max = cx + w/2
+                y_min = cy - h/2
+                y_max = cy + h/2
 
-            if x_min >= x_max or y_min >= y_max:
-                print("flipped location.", x_min, x_max, y_min, y_max)
-                valid = False
-            if x_min < 0 or y_min < 0 or x_max > width or y_max > height:
-                print("out of boundary.", x_min, x_max, y_min, y_max)
-                valid = False
+                if x_min >= x_max or y_min >= y_max:
+                    print("flipped location.", x_min, x_max, y_min, y_max)
+                    valid = False
+                if x_min < 0 or y_min < 0 or x_max > width or y_max > height:
+                    print("out of boundary.", x_min, x_max, y_min, y_max)
+                    valid = False
 
-            # Show the result
-            if not valid:
-                cv2.imshow("image", image)
-                if cv2.waitKey() == 27:
-                    break
+                # Show the result
+                if not valid:
+                    cv2.imshow("image", image)
+                    if cv2.waitKey() == 27:
+                        break
+
+        cv2.imshow("image", image)
+        if cv2.waitKey() == 27:
+            break
