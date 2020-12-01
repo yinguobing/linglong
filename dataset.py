@@ -189,64 +189,49 @@ def preprocess_data(sample):
     return image, bbox, class_id
 
 
-def load_datasets(batch_size):
+def load_datasets(record_file, batch_size, training=False):
+    """Setting up a `tf.data` pipeline.
 
-    train_dataset = tf.data.TFRecordDataset(
-        "/home/robin/data/face/wider/tfrecord/wider_train.record")
-    val_dataset = tf.data.TFRecordDataset(
-        "/home/robin/data/face/wider/tfrecord/wider_val.record")
+    To ensure that the model is fed with data efficiently we will be using
+    `tf.data` API to create our input pipeline. The input pipeline consists for 
+    the following major processing steps:
 
-    # Setting up a `tf.data` pipeline
-
-    # To ensure that the model is fed with data efficiently we will be using
-    # `tf.data` API to create our input pipeline. The input pipeline
-    # consists for the following major processing steps:
-
-    # - Apply the preprocessing function to the samples
-    # - Create batches with fixed batch size. Since images in the batch can
-    # have different dimensions, and can also have different number of
-    # objects, we use `padded_batch` to the add the necessary padding to create
-    # rectangular tensors
-    # - Create targets for each sample in the batch using `LabelEncoder`
+    - Apply the preprocessing function to the samples.
+    - Create batches with fixed batch size. Since images in the batch can
+        have different dimensions, and can also have different number of
+        objects, we use `padded_batch` to the add the necessary padding to
+        create rectangular tensors.
+    - Create targets for each sample in the batch using `LabelEncoder`.
+    """
 
     autotune = tf.data.experimental.AUTOTUNE
 
     label_encoder = LabelEncoder()
 
-    train_dataset = train_dataset.map(parse_record,
-                                      num_parallel_calls=autotune)
-    train_dataset = train_dataset.map(preprocess_data,
-                                      num_parallel_calls=autotune)
-    train_dataset = train_dataset.shuffle(8 * batch_size)
-    train_dataset = train_dataset.padded_batch(batch_size=batch_size,
-                                               padding_values=(0.0, 1e-8, -1),
-                                               drop_remainder=True)
-    train_dataset = train_dataset.map(label_encoder.encode_batch,
-                                      num_parallel_calls=autotune)
-    train_dataset = train_dataset.apply(tf.data.experimental.ignore_errors())
-    train_dataset = train_dataset.prefetch(autotune)
+    dataset = tf.data.TFRecordDataset(record_file)
+    dataset = dataset.map(parse_record, num_parallel_calls=autotune)
+    dataset = dataset.map(preprocess_data, num_parallel_calls=autotune)
+    if training:
+        dataset = dataset.shuffle(8 * batch_size)
+    dataset = dataset.padded_batch(batch_size=batch_size,
+                                   padding_values=(0.0, 1e-8, -1),
+                                   drop_remainder=True)
+    dataset = dataset.map(label_encoder.encode_batch,
+                          num_parallel_calls=autotune)
+    dataset = dataset.apply(tf.data.experimental.ignore_errors())
+    dataset = dataset.prefetch(autotune)
 
-    val_dataset = val_dataset.map(parse_record, num_parallel_calls=autotune)
-    val_dataset = val_dataset.map(preprocess_data, num_parallel_calls=autotune)
-    val_dataset = val_dataset.padded_batch(batch_size=1,
-                                           padding_values=(0.0, 1e-8, -1),
-                                           drop_remainder=True)
-    val_dataset = val_dataset.map(label_encoder.encode_batch,
-                                  num_parallel_calls=autotune)
-    val_dataset = val_dataset.apply(tf.data.experimental.ignore_errors())
-    val_dataset = val_dataset.prefetch(autotune)
-
-    return train_dataset, val_dataset
+    return dataset
 
 
 if __name__ == "__main__":
     import cv2
-    val_dataset = tf.data.TFRecordDataset(
-        "/home/robin/data/face/wider/tfrecord/wider_val.record")
-    val_dataset = val_dataset.map(parse_record)
-    val_dataset = val_dataset.map(preprocess_data)
+    dataset = tf.data.TFRecordDataset(
+        "/home/robin/data/face/wider/tfrecord/wider_train.record")
+    dataset = dataset.map(parse_record)
+    dataset = dataset.map(preprocess_data)
 
-    for image, boxes, class_id in val_dataset:
+    for image, boxes, class_id in dataset:
 
         # Use OpenCV to preview the image.
         image = np.array(image, np.uint8)
@@ -259,7 +244,22 @@ if __name__ == "__main__":
                           (int(cx + w/2), int(cy + h/2)),
                           (0, 255, 0), 2)
 
-        # Show the result
-        cv2.imshow("image", image)
-        if cv2.waitKey() == 27:
-            break
+            # Check if the sample is valid.
+            valid = True
+            x_min = cx - w/2
+            x_max = cx + w/2
+            y_min = cy - h/2
+            y_max = cy + h/2
+
+            if x_min >= x_max or y_min >= y_max:
+                print("flipped location.", x_min, x_max, y_min, y_max)
+                valid = False
+            if x_min < 0 or y_min < 0 or x_max > width or y_max > height:
+                print("out of boundary.", x_min, x_max, y_min, y_max)
+                valid = False
+
+            # Show the result
+            if not valid:
+                cv2.imshow("image", image)
+                if cv2.waitKey() == 27:
+                    break

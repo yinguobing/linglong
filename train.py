@@ -1,52 +1,95 @@
 """Training code for RetinaNet face detection."""
 
 import os
+from argparse import ArgumentParser
+
 import tensorflow as tf
 
 from dataset import load_datasets
 from losses import RetinaNetLoss
 from network import build_model
 
+parser = ArgumentParser()
+parser.add_argument("--epochs", default=60, type=int,
+                    help="Number of training epochs.")
+parser.add_argument("--initial_epoch", default=0, type=int,
+                    help="From which epochs to resume training.")
+parser.add_argument("--batch_size", default=2, type=int,
+                    help="Training batch size.")
+parser.add_argument("--export_only", default=False, type=bool,
+                    help="Save the model without training.")
+parser.add_argument("--eval_only", default=False, type=bool,
+                    help="Evaluate the model without training.")
+args = parser.parse_args()
+
+
 if __name__ == "__main__":
+    # Set the TensorFlow training and validation record files' path.
+    record_train = "/home/robin/data/face/wider/tfrecord/wider_train.record"
+    record_val = "/home/robin/data/face/wider/tfrecord/wider_val.record"
 
-    # Setting up training parameters
-    model_dir = "retinanet/"
+    # Checkpoint is used to resume training.
+    checkpoint_dir = "./checkpoints/"
 
+    # Save the model for inference later.
+    export_dir = "./exported"
+
+    # Log directory will keep training logs like loss/accuracy curves.
+    log_dir = "./logs"
+
+    # Setup the model
     num_classes = 2
-    batch_size = 32
-
-    learning_rates = [2.5e-06, 0.000625, 0.00125, 0.0025, 0.00025, 2.5e-05]
-    learning_rate_boundaries = [125, 250, 500, 240000, 360000]
-    learning_rate_fn = tf.optimizers.schedules.PiecewiseConstantDecay(
-        boundaries=learning_rate_boundaries, values=learning_rates)
-
-    loss_fn = RetinaNetLoss(num_classes)
-    optimizer = tf.optimizers.SGD(learning_rate=learning_rate_fn, momentum=0.9)
-
-    # Initializing and compiling model
     model = build_model(num_classes)
+
+    # Model built. Restore the latest model if checkpoints are available.
+    if not os.path.exists(checkpoint_dir):
+        os.makedirs(checkpoint_dir)
+        print("Checkpoint directory created: {}".format(checkpoint_dir))
+
+    latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir)
+    if latest_checkpoint:
+        print("Checkpoint found: {}, restoring...".format(latest_checkpoint))
+        model.load_weights(latest_checkpoint)
+        print("Checkpoint restored: {}".format(latest_checkpoint))
+    else:
+        print("Checkpoint not found. Model weights will be initialized randomly.")
+
+    # If the restored model is ready for inference, save it and quit training.
+    if args.export_only:
+        if latest_checkpoint is None:
+            print("Warning: Model not restored from any checkpoint.")
+        print("Saving model to {} ...".format(export_dir))
+        model.save(export_dir)
+        print("Model saved at: {}".format(export_dir))
+        quit()
+
+    # Compile the model for training.
+    # learning_rates = [2.5e-07, 0.000625, 0.00125, 0.0025, 0.00025, 2.5e-05]
+    # learning_rate_boundaries = [125, 250, 500, 240000, 360000]
+    # learning_rate_fn = tf.optimizers.schedules.PiecewiseConstantDecay(
+    #     boundaries=learning_rate_boundaries, values=learning_rates)
+    optimizer = tf.optimizers.SGD(learning_rate=0.01)
+    loss_fn = RetinaNetLoss(num_classes)
+
     model.compile(loss=loss_fn, optimizer=optimizer)
 
     # Setting up callbacks
-    callbacks_list = [
-        tf.keras.callbacks.ModelCheckpoint(
-            filepath=os.path.join(model_dir, "weights" + "_epoch_{epoch}"),
-            monitor="loss",
-            save_best_only=True,
-            save_weights_only=True,
-            verbose=1,),
-        tf.keras.callbacks.TensorBoard()
-    ]
+    callbacks_list = [tf.keras.callbacks.ModelCheckpoint(
+        filepath=os.path.join(checkpoint_dir, "weights" + "_epoch_{epoch}"),
+        monitor="loss",
+        save_best_only=True,
+        save_weights_only=True,
+        verbose=1),
+        tf.keras.callbacks.TensorBoard(log_dir=log_dir, update_freq=200)]
 
     # Load the WIDER dataset using TensorFlow Datasets
-    train_dataset, val_dataset = load_datasets(batch_size=1)
+    dataset_train = load_datasets(record_train, args.batch_size, True)
+    dataset_val = load_datasets(record_val, args.batch_size, False)
 
-    # Training the model
-    epochs = 20
-
-    # Running 100 training and 50 validation steps,
-    model.fit(train_dataset,
-              validation_data=val_dataset.take(50),
-              epochs=epochs,
+    # Training
+    model.fit(dataset_train,
+              validation_data=dataset_val.take(50),
+              epochs=args.epochs,
               callbacks=callbacks_list,
+              initial_epoch=args.initial_epoch,
               verbose=1)

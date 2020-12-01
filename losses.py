@@ -17,11 +17,9 @@ class RetinaNetBoxLoss(tf.losses.Loss):
         difference = y_true - y_pred
         absolute_difference = tf.abs(difference)
         squared_difference = difference ** 2
-        loss = tf.where(
-            tf.less(absolute_difference, self._delta),
-            0.5 * squared_difference,
-            absolute_difference - 0.5,
-        )
+        loss = tf.where(tf.less(absolute_difference, self._delta),
+                        0.5 * squared_difference,
+                        absolute_difference - 0.5)
         return tf.reduce_sum(loss, axis=-1)
 
 

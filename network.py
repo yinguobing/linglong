@@ -142,11 +142,11 @@ def build_head(output_filters, bias_init):
 
 
 def build_retinanet(num_classes, backbone=None):
-    """A Keras model implementing the RetinaNet architecture.
+    """Implementing the RetinaNet architecture.
 
-    Attributes:
-      num_classes: Number of classes in the dataset.
-      backbone: The backbone to build the feature pyramid from.
+    Args:
+        num_classes: Number of classes in the dataset.
+        backbone: The backbone to build the feature pyramid from.
     """
     fpn = feature_pyramid(backbone)
     prior_probability = tf.constant_initializer(-np.log((1 - 0.01) / 0.01))
@@ -154,15 +154,17 @@ def build_retinanet(num_classes, backbone=None):
     box_head = build_head(9 * 4, "zeros")
 
     inputs = keras.Input((None, None, 3), dtype=tf.float32)
-    features = fpn(inputs)
-
     batch_size = tf.shape(inputs)[0]
     cls_outputs = []
     box_outputs = []
+    features = fpn(inputs)
+
     for feature in features:
-        box_outputs.append(tf.reshape(box_head(feature), [batch_size, -1, 4]))
-        cls_outputs.append(tf.reshape(cls_head(feature), [batch_size, -1,
-                                                          num_classes]))
+        box_outputs.append(tf.reshape(box_head(feature),
+                                      [batch_size, -1, 4]))
+        cls_outputs.append(tf.reshape(cls_head(feature),
+                                      [batch_size, -1, num_classes]))
+
     cls_outputs = tf.concat(cls_outputs, axis=1)
     box_outputs = tf.concat(box_outputs, axis=1)
 
@@ -177,16 +179,16 @@ class DecodePredictions(tf.keras.layers.Layer):
     """A Keras layer that decodes predictions of the RetinaNet model.
 
     Attributes:
-      num_classes: Number of classes in the dataset
-      confidence_threshold: Minimum class probability, below which detections
-        are pruned.
-      nms_iou_threshold: IOU threshold for the NMS operation
-      max_detections_per_class: Maximum number of detections to retain per
-       class.
-      max_detections: Maximum number of detections to retain across all
-        classes.
-      box_variance: The scaling factors used to scale the bounding box
-        predictions.
+        num_classes: Number of classes in the dataset
+        confidence_threshold: Minimum class probability, below which detections
+            are pruned.
+        nms_iou_threshold: IOU threshold for the NMS operation
+        max_detections_per_class: Maximum number of detections to retain per
+        class.
+        max_detections: Maximum number of detections to retain across all
+            classes.
+        box_variance: The scaling factors used to scale the bounding box
+            predictions.
     """
 
     def __init__(
@@ -240,8 +242,7 @@ class DecodePredictions(tf.keras.layers.Layer):
             self.max_detections,
             self.nms_iou_threshold,
             self.confidence_threshold,
-            clip_boxes=False,
-        )
+            clip_boxes=False)
 
 
 def build_model(num_classes):
