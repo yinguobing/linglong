@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     # Save the processed video file.
     if args.output:
-        fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+        fourcc = cv2.VideoWriter_fourcc('a', 'v', 'c', '1')
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         frame_rate = cap.get(cv2.CAP_PROP_FPS)
