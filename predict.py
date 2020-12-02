@@ -13,6 +13,8 @@ parser.add_argument("--video", type=str, default=None,
                     help="Video file to be processed.")
 parser.add_argument("--cam", type=int, default=None,
                     help="The webcam index.")
+parser.add_argument("--output", type=str, default=None,
+                    help="Save the processed video file.")
 args = parser.parse_args()
 
 
@@ -48,14 +50,20 @@ if __name__ == "__main__":
     if video_src == 0:
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 
+    # Save the processed video file.
+    if args.output:
+        fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        frame_rate = cap.get(cv2.CAP_PROP_FPS)
+        video_writer = cv2.VideoWriter(
+            args.output, fourcc, frame_rate, (width, height))
+
     while True:
         # Read frame, crop it, flip it, suits your needs.
         frame_got, frame = cap.read()
         if frame_got is False:
             break
-
-        # Crop it if frame is larger than expected.
-        # frame = frame[:480, :640]
 
         # If frame comes from webcam, flip it so it looks like a mirror.
         if video_src == 0:
@@ -76,6 +84,10 @@ if __name__ == "__main__":
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.putText(frame, "face:{:.2}".format(
                 score), (x1, y1-5), cv2.FONT_HERSHEY_DUPLEX, 0.6, (0, 255, 0))
+
+        # Save the output in video file.
+        if args.output:
+            video_writer.write(frame)
 
         # Show the result in windows.
         cv2.imshow('image', frame)
