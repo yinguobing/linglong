@@ -229,7 +229,11 @@ if __name__ == "__main__":
     dataset = dataset.map(parse_record)
     dataset = dataset.map(preprocess_data)
 
+    n_images = 0
+
     for image, boxes, class_id in dataset:
+
+        n_images += 1
 
         # Use OpenCV to preview the image.
         image = np.array(image, np.uint8)
@@ -264,5 +268,7 @@ if __name__ == "__main__":
                         break
 
         cv2.imshow("image", image)
-        if cv2.waitKey() == 27:
+        if cv2.waitKey(1) == 27:
             break
+
+    print("Total images: {}".format(n_images))
