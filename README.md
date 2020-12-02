@@ -1,10 +1,10 @@
 # LINGLONG
 
-A human friendly deep learning object detection implementation.
+A human friendly deep learning face detection implementation.
 
 ## Features
  
- - Advanced model architecture: ShuffleNet v2
+ - Advanced model architecture: Fully convolutional ShuffleNet v2
  - Balanced training loss: focal loss
  - Feature pyramid network
  - Data augmentation: randomly scale/flip
@@ -85,24 +85,7 @@ tensorboard --logdir /path/to/linglong/logs
 ```
 
 ## Evaluation
-A quick evaluation on validation datasets will be performed automatically after training. For a full evaluation, please run the `evaluate.py` file. The NME value will be printed after evaluation.
-
-```
-python3 evaluate.py
-```
-
-## Export
-Even though the model wights are saved in the checkpoint, it is better to save the entire model so you won't need the source code to restore it. This is useful for inference and model optimization later.
-
-### For cloud/PC applications
-Exported model will be saved in `saved_model` format in directory `./exported`. You can restore the model with `Keras` directly.
-
-```shell
-python3 train.py --export_only=True
-```
-
-### For Android phones, embedded and IoT devices
-TensorFlow lite and TensorFlow Model Optimization Toolkit will help you to get a optimized model for these applications. Please follow the instructions of the later section *Optimization*.
+A quick evaluation on validation datasets will be performed automatically after training.
 
 ## Inference
 Check out module `predict.py` for inference with video files or webcams.
@@ -110,9 +93,6 @@ Check out module `predict.py` for inference with video files or webcams.
 ```bash
 python3 predict.py
 ```
-
-## Optimization
-Optimize the model so it can run on mobile, embedded, and IoT devices. TensorFlow supports post-training quantization, quantization aware training, pruning, and clustering.
 
 ## Authors
 Yin Guobing (尹国冰) - yinguobing
