@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     # Setting up callbacks
     callbacks_list = [tf.keras.callbacks.ModelCheckpoint(
-        filepath=os.path.join(checkpoint_dir, "weights" + "_epoch_{epoch}"),
+        filepath=os.path.join(checkpoint_dir, "linglong"),
         monitor="loss",
         save_best_only=True,
         save_weights_only=True,
