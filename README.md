@@ -94,6 +94,8 @@ Check out module `predict.py` for inference with video files or webcams.
 python3 predict.py
 ```
 
+Incase you want to save the processed video file, provide file path with `--output`.
+
 ## Authors
 Yin Guobing (尹国冰) - yinguobing
 
