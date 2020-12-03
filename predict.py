@@ -4,8 +4,9 @@ import cv2
 import numpy as np
 import tensorflow as tf
 
-from network import build_decoding_layer, build_model
+from network import build_model
 from preprocessing import resize_and_pad_image
+from postprocessing import build_decoding_layer
 
 # Take arguments from user input.
 parser = ArgumentParser()
