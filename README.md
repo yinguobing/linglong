@@ -84,6 +84,8 @@ tensorboard --logdir /path/to/linglong/logs
 
 ```
 
+Set the variable `log_image` to log detection result of image in TensorBoard.
+
 ## Evaluation
 A quick evaluation on validation datasets will be performed automatically after training.
 
