@@ -8,6 +8,7 @@ import tensorflow as tf
 from dataset import load_datasets
 from losses import RetinaNetLoss
 from network import build_model
+from callbacks import LogImages
 
 parser = ArgumentParser()
 parser.add_argument("--epochs", default=60, type=int,
@@ -36,6 +37,9 @@ if __name__ == "__main__":
 
     # Log directory will keep training logs like loss/accuracy curves.
     log_dir = "./logs"
+
+    # A sample image used to log the model's behavior during training.
+    log_image = "./docs/family.jpg"
 
     # Setup the model
     num_classes = 2
@@ -80,7 +84,8 @@ if __name__ == "__main__":
         save_best_only=True,
         save_weights_only=True,
         verbose=1),
-        tf.keras.callbacks.TensorBoard(log_dir=log_dir, update_freq=200)]
+        tf.keras.callbacks.TensorBoard(log_dir=log_dir),
+        LogImages(log_dir, log_image)]
 
     # Load the WIDER dataset using TensorFlow Datasets
     dataset_train = load_datasets(record_train, args.batch_size, True)
