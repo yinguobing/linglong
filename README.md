@@ -106,4 +106,4 @@ Yin Guobing (尹国冰) - yinguobing
 
 ## Acknowledgments
 
-- [Srihari Humbarwadi](https://twitter.com/srihari_rh), for the original RetinaNet implementation.
+- [Srihari Humbarwadi](https://twitter.com/srihari_rh), for the [original RetinaNet implementation](https://github.com/keras-team/keras-io/blob/master/examples/vision/retinanet.py).
