@@ -89,6 +89,16 @@ Set the variable `log_image` to log detection result of image in TensorBoard.
 ## Evaluation
 A quick evaluation on validation datasets will be performed automatically after training.
 
+
+## Export
+Even though the model wights are saved in the checkpoint, it is better to save the entire model so you won't need the source code to restore it. This is useful for inference and model optimization later.
+
+### For cloud/PC applications
+Exported model will be saved in `saved_model` format in directory `./exported`. You can restore the model with `Keras` directly.
+
+```bash
+python3 train.py --export_only=True
+
 ## Inference
 Check out module `predict.py` for inference with video files or webcams.
 
@@ -96,7 +106,7 @@ Check out module `predict.py` for inference with video files or webcams.
 python3 predict.py
 ```
 
-Incase you want to save the processed video file, provide file path with `--output`.
+Incase you want to save the processed video file, provide the file path with `--output`.
 
 ## Authors
 Yin Guobing (尹国冰) - yinguobing
