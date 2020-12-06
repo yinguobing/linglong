@@ -68,19 +68,16 @@ if __name__ == "__main__":
         quit()
 
     # Compile the model for training.
-    # learning_rates = [2.5e-07, 0.000625, 0.00125, 0.0025, 0.00025, 2.5e-05]
-    # learning_rate_boundaries = [125, 250, 500, 240000, 360000]
-    # learning_rate_fn = tf.optimizers.schedules.PiecewiseConstantDecay(
-    #     boundaries=learning_rate_boundaries, values=learning_rates)
-    optimizer = tf.optimizers.SGD(learning_rate=0.01)
-    loss_fn = RetinaNetLoss(num_classes)
-
-    model.compile(loss=loss_fn, optimizer=optimizer)
+    learning_rate_schedule = tf.optimizers.schedules.PiecewiseConstantDecay(
+        boundaries=[125, 250, 500, 240000, 360000],
+        values=[2.5e-07, 0.000625, 0.00125, 0.0025, 0.00025, 2.5e-05])
+    optimizer = tf.optimizers.SGD(learning_rate=learning_rate_schedule)
+    model.compile(loss=RetinaNetLoss(num_classes), optimizer=optimizer)
 
     # Setting up callbacks
     callbacks_list = [tf.keras.callbacks.ModelCheckpoint(
         filepath=os.path.join(checkpoint_dir, "linglong"),
-        monitor="loss",
+        monitor="val_loss",
         save_best_only=True,
         save_weights_only=True,
         verbose=1),
