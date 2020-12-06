@@ -1,6 +1,10 @@
 # LINGLONG
 
-A human friendly deep learning face detection implementation.
+A human friendly implementation of deep learning face detection.
+
+Watch this video demo:
+
+[![linglong](./docs/preview.jpg)](https://www.bilibili.com/video/BV1s54y167CA/)
 
 ## Features
  
