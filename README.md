@@ -102,6 +102,7 @@ Exported model will be saved in `saved_model` format in directory `./exported`. 
 
 ```bash
 python3 train.py --export_only=True
+```
 
 ## Inference
 Check out module `predict.py` for inference with video files or webcams.
