@@ -13,9 +13,9 @@ from tensorflow import keras
 from models.shufflenet_v2 import shuffle_unit_v2
 
 
-def shuffle_net_v2(input_shape):
+def shuffle_net_v2(input_shape, filters=116):
     # Build conv layers.
-    stage2_layers = [shuffle_unit_v2(downsampling=True, filters=116)]
+    stage2_layers = [shuffle_unit_v2(downsampling=True, filters=filters)]
     stage2_layers.extend([shuffle_unit_v2() for _ in range(3)])
 
     stage3_layers = [shuffle_unit_v2(downsampling=True)]
