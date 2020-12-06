@@ -4,7 +4,6 @@ import cv2
 import numpy as np
 import tensorflow as tf
 
-from network import build_model
 from preprocessing import resize_and_pad_image
 from postprocessing import build_decoding_layer
 
@@ -22,17 +21,13 @@ args = parser.parse_args()
 if __name__ == "__main__":
 
     # Initializing the model
-    model = build_model(2)
-
-    # Loading weights.
-    latest_checkpoint = tf.train.latest_checkpoint("checkpoints")
-    model.load_weights(latest_checkpoint)
+    model = tf.keras.models.load_model("./exported")
 
     # Building inference model
     image = tf.keras.Input(shape=[None, None, 3], name="image")
     predictions = model(image, training=False)
     detections = build_decoding_layer(
-        2, confidence_threshold=0.6)(image, predictions)
+        2, confidence_threshold=0.6, max_detections_per_class=20)(image, predictions)
     inference_model = tf.keras.Model(inputs=image, outputs=detections)
 
     # Generating detections
