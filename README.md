@@ -73,6 +73,8 @@ python3 train.py --epochs=80 --batch_size=16
 
 Training checkpoints can be found in directory `./checkpoints`. Before training started, this directory will be checked and the model will be restored if any checkpoint is available. Only the best model (smallest validation loss) will be saved.
 
+You can download this [checkpoint](https://drive.google.com/file/d/1w3tGOmMZM_z_jNggIYpX6akTpSKaCJI5/view?usp=sharing) to speed up your training.
+
 ### Resume training
 If training was interrupted, resume it by providing `--initial_epoch` argument.
 
