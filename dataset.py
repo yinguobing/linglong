@@ -131,11 +131,11 @@ def parse_record(example_proto):
         'image/filename': tf.io.FixedLenFeature((), tf.string),
         'image/encoded': tf.io.FixedLenFeature((), tf.string),
         'image/format': tf.io.FixedLenFeature((), tf.string),
-        'faces/bbox/ymin': tf.io.VarLenFeature(tf.float32),
-        'faces/bbox/ymax': tf.io.VarLenFeature(tf.float32),
-        'faces/bbox/xmin': tf.io.VarLenFeature(tf.float32),
-        'faces/bbox/xmax': tf.io.VarLenFeature(tf.float32),
-        'faces/label': tf.io.VarLenFeature(tf.int64),
+        'image/object/bbox/ymin': tf.io.VarLenFeature(tf.float32),
+        'image/object/bbox/ymax': tf.io.VarLenFeature(tf.float32),
+        'image/object/bbox/xmin': tf.io.VarLenFeature(tf.float32),
+        'image/object/bbox/xmax': tf.io.VarLenFeature(tf.float32),
+        'image/object/class/label': tf.io.VarLenFeature(tf.int64),
     }
 
     example = tf.io.parse_single_example(example_proto, feature_description)
@@ -165,13 +165,13 @@ def preprocess_data(sample):
     """
 
     image = tf.image.decode_jpeg(sample['image/encoded'], channels=3)
-    bbox = tf.stack([sample["faces/bbox/ymin"],
-                     sample["faces/bbox/xmin"],
-                     sample["faces/bbox/ymax"],
-                     sample["faces/bbox/xmax"]], axis=-1)
+    bbox = tf.stack([sample["image/object/bbox/ymin"],
+                     sample["image/object/bbox/xmin"],
+                     sample["image/object/bbox/ymax"],
+                     sample["image/object/bbox/xmax"]], axis=-1)
 
     bbox = swap_xy(bbox)
-    class_id = tf.cast(sample["faces/label"], dtype=tf.int32)
+    class_id = tf.cast(sample['image/object/class/label'], dtype=tf.int32)
 
     image, bbox = random_flip_horizontal(image, bbox)
     image, image_shape, _ = resize_and_pad_image(image)
@@ -216,6 +216,7 @@ def load_datasets(record_file, batch_size, training=False):
                           num_parallel_calls=autotune)
     dataset = dataset.apply(tf.data.experimental.ignore_errors())
     dataset = dataset.prefetch(autotune)
+
 
     return dataset
 
