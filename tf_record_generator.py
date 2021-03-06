@@ -229,7 +229,7 @@ if __name__ == "__main__":
     wider = WiderFace(data_dir, mode="train")
 
     for example in tqdm(wider):
-        tf_example = create_tf_example(example, 24)
+        tf_example = create_tf_example(example, 64)
         if tf_example is not None:
             writer.write(tf_example.SerializeToString())
 
